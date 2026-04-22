@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-folderview"
-version = "0.1.0"
-description = "Folder-tree view of IP prefixes for NetBox"
+version = "0.1.1"
+description = "Folder-tree view of IP prefixes for NetBox — collapsible hierarchy, per-prefix IP browsing, filter-aware."
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
 dependencies = []
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: System Administrators",
     "Topic :: System :: Networking",
 ]
@@ -28,3 +28,6 @@ email = "averyhabbott@yahoo.com"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["netbox_folderview*"]
+
+[tool.setuptools.package-data]
+netbox_folderview = ["templates/**/*"]
