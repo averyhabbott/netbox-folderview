@@ -95,12 +95,17 @@ class PrefixTreeView(BaseTreeView):
         filter_form = self.filter_form_class(request.GET)
         tree_table = PrefixTreeTable(Prefix.objects.none())
         tree_table.configure(request)
+        ip_table = PrefixIPTable(Prefix.objects.none())
+        ip_table.configure(request)
+        tree_columns = [col[0] for col in tree_table.selected_columns]
 
         return render(request, self.template_name, {
             'filter_form': filter_form,
             'root_rows': root_rows,
             'filter_params': _strip_depth(request.GET).urlencode(),
             'tree_table': tree_table,
+            'tree_columns': tree_columns,
+            'ip_table': ip_table,
             'model': Prefix,
         })
 
@@ -151,10 +156,15 @@ class PrefixChildrenView(LoginRequiredMixin, View):
             for c in direct_children
         ]
 
+        tree_table = PrefixTreeTable(Prefix.objects.none())
+        tree_table.configure(request)
+        tree_columns = [col[0] for col in tree_table.selected_columns]
+
         return render(request, 'netbox_folderview/inc/prefix/tree_node.html', {
             'children': child_rows,
             'filter_params': _strip_depth(request.GET).urlencode(),
             'depth': depth,
+            'tree_columns': tree_columns,
         })
 
 

@@ -35,8 +35,20 @@
             hx-swap="innerHTML"
             ondblclick="window.location.href='{{ row.prefix.get_absolute_url }}'">
         <span class="font-monospace">{{ row.prefix.prefix }}</span>
-        {% if row.prefix.description %}
+        {% if 'description' in tree_columns and row.prefix.description %}
           <span class="text-muted ms-2 small">{{ row.prefix.description }}</span>
+        {% endif %}
+        {% if 'status' in tree_columns %}
+          <span class="badge text-bg-secondary ms-1">{{ row.prefix.get_status_display }}</span>
+        {% endif %}
+        {% if 'vrf' in tree_columns and row.prefix.vrf %}
+          <span class="text-muted ms-2 small">{{ row.prefix.vrf }}</span>
+        {% endif %}
+        {% if 'role' in tree_columns and row.prefix.role %}
+          <span class="text-muted ms-2 small">{{ row.prefix.role }}</span>
+        {% endif %}
+        {% if 'tenant' in tree_columns and row.prefix.tenant %}
+          <span class="text-muted ms-2 small">{{ row.prefix.tenant }}</span>
         {% endif %}
       </span>
 

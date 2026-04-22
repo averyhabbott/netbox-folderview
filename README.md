@@ -20,7 +20,7 @@ A NetBox plugin that provides a folder-tree view of IP prefixes, similar to the 
 - **Lazy loading** — child prefixes and IP addresses are fetched on demand; no performance penalty on large datasets
 - **Filter-aware tree** — apply any NetBox prefix filter and the tree reorganizes to show only matching prefixes; filtered-out parent prefixes are skipped and their children become root nodes automatically
 - **Saved filters** — the saved filter dropdown from the standard Prefixes view is available directly in the tree header
-- **Column configuration** — right-pane IP table columns are configurable per-user, persisted via NetBox's native `UserConfig` mechanism
+- **Column configuration** — columns in both the prefix tree and IP address table are configurable per-user, persisted via NetBox's native `UserConfig` mechanism
 - **Respects NetBox RBAC** — all queries are restricted to the authenticated user's object-level permissions
 - **Read-only** — no create, edit, or delete actions; purely a visualization layer over existing data
 
@@ -94,7 +94,7 @@ The main view is split into two panes:
 - Displays the IP addresses assigned within the selected prefix
 - Paginated using NetBox's standard pagination controls
 - **Double-click** any IP address to navigate to its NetBox detail page
-- Click **Configure** to choose which columns are shown; your preferences are saved per-user
+- Click **Configure** (available in both panes) to choose which columns are shown; your preferences are saved per-user
 
 ### Filtering the Tree
 

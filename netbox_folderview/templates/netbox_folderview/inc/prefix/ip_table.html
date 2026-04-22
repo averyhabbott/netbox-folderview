@@ -23,6 +23,3 @@
     {% include 'inc/paginator.html' with htmx=True table=table paginator=table.paginator page=table.page %}
   </div>
 </div>
-
-{# IP table column config modal #}
-{% table_config_form table table_name="PrefixIPTable" %}

@@ -61,12 +61,19 @@
     </div>
 
     {# Two-pane layout #}
-    <div class="row g-0" style="min-height: 60vh;">
+    <div class="row g-0">
 
       {# Left pane: prefix tree #}
-      <div class="col-md-4 border-end pe-2" id="prefix-tree-pane">
-        <div class="mb-2">
+      <div class="col-md-4 border-end pe-2" id="prefix-tree-pane" style="max-height: 75vh; overflow-y: auto;">
+        <div class="mb-2 d-flex justify-content-between align-items-center">
           <small class="text-muted">{% trans "Prefix Tree" %}</small>
+          {% if request.user.is_authenticated %}
+            <button type="button" class="btn btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#PrefixTreeTable_config"
+                    title="{% trans "Configure Table" %}">
+              <i class="mdi mdi-cog"></i> {% trans "Configure" %}
+            </button>
+          {% endif %}
         </div>
         <div id="prefix-tree">
           {% if root_rows %}
@@ -78,7 +85,7 @@
       </div>
 
       {# Right pane: IP addresses #}
-      <div class="col-md-8 ps-3" id="ip-list-pane">
+      <div class="col-md-8 ps-3" id="ip-list-pane" style="max-height: 75vh; overflow-y: auto;">
         <div id="ip-table-container">
           <p class="text-muted mt-3">
             <i class="mdi mdi-information-outline me-1"></i>
@@ -101,10 +108,17 @@
 
 {% endblock content %}
 
-{% block modals %}{% endblock modals %}
+{% block modals %}
+  {% table_config_form tree_table %}
+  {% table_config_form ip_table %}
+{% endblock modals %}
 
 {% block javascript %}
 <style>
+  .tree-node {
+    background-color: var(--tblr-card-bg);
+    border-bottom: 1px solid var(--tblr-border-color-translucent, rgba(98,105,118,.16));
+  }
   .fv-selected {
     background-color: rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.15);
     border-radius: 4px;
