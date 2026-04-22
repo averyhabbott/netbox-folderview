@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "netbox-folderview"
+version = "0.1.0"
+description = "Folder-tree view of IP prefixes for NetBox"
+requires-python = ">=3.12"
+dependencies = ["netbox"]
+
+[[project.authors]]
+name = "Avery Abbott"
+email = "averyhabbott@yahoo.com"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["netbox_folderview*"]

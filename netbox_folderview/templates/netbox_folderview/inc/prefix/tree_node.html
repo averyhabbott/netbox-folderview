@@ -1,0 +1,42 @@
+{% load i18n %}
+{% for row in children %}
+  <div class="tree-item-wrap">
+    <div class="tree-node d-flex align-items-center py-1"
+         data-pk="{{ row.prefix.pk }}"
+         style="padding-left: {{ depth }}rem;">
+
+      {# Expand toggle #}
+      <span class="tree-toggle me-1" style="width: 1.2rem; text-align: center; flex-shrink: 0;">
+        {% if row.has_children %}
+          <a href="#"
+             class="text-muted tree-expand-btn"
+             hx-get="{% url 'plugins:netbox_folderview:prefix_children' pk=row.prefix.pk %}?{{ filter_params }}&depth={{ depth }}"
+             hx-target="next .tree-children"
+             hx-swap="innerHTML"
+             hx-on::after-request="this.querySelector('i').classList.toggle('mdi-chevron-right'); this.querySelector('i').classList.toggle('mdi-chevron-down');"
+             title="{% trans "Expand" %}">
+            <i class="mdi mdi-chevron-right"></i>
+          </a>
+        {% else %}
+          <i class="mdi mdi-circle-small text-muted"></i>
+        {% endif %}
+      </span>
+
+      {# Prefix label: single click loads IPs, double click navigates to detail #}
+      <span class="tree-prefix flex-grow-1"
+            style="cursor: pointer; user-select: none;"
+            hx-get="{% url 'plugins:netbox_folderview:prefix_ips' pk=row.prefix.pk %}"
+            hx-target="#ip-table-container"
+            hx-swap="innerHTML"
+            ondblclick="window.location.href='{{ row.prefix.get_absolute_url }}'">
+        <span class="font-monospace">{{ row.prefix.prefix }}</span>
+        {% if row.prefix.description %}
+          <span class="text-muted ms-2 small">{{ row.prefix.description }}</span>
+        {% endif %}
+      </span>
+
+    </div>
+    {# Children are injected here by htmx on expand #}
+    <div class="tree-children"></div>
+  </div>
+{% endfor %}

@@ -1,0 +1,117 @@
+{% extends 'generic/_base.html' %}
+{% load helpers %}
+{% load i18n %}
+
+{% block title %}{% trans "Prefix Tree" %}{% endblock %}
+
+{% block tabs %}
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link active" id="tree-tab" data-bs-toggle="tab" data-bs-target="#tree-pane"
+         type="button" role="tab" aria-controls="tree-pane" aria-selected="true">
+        {% trans "Tree" %}
+      </a>
+    </li>
+    {% if filter_form %}
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="filters-form-tab" data-bs-toggle="tab" data-bs-target="#filters-form"
+                type="button" role="tab" aria-controls="filters-form" aria-selected="false">
+          {% trans "Filters" %}
+          {% badge filter_form.changed_data|length bg_color="primary" %}
+        </button>
+      </li>
+    {% endif %}
+  </ul>
+{% endblock tabs %}
+
+{% block content %}
+
+  {# Tree tab #}
+  <div class="tab-pane show active" id="tree-pane" role="tabpanel" aria-labelledby="tree-tab">
+
+    {# Applied filters summary #}
+    {% if filter_form %}
+      {% applied_filters model filter_form request.GET %}
+    {% endif %}
+
+    {# Quick search + saved filter controls #}
+    <div class="row mb-3">
+      <div class="col-auto">
+        <div class="input-group input-group-flat me-2">
+          <input type="search" id="tree-quicksearch" class="form-control"
+                 placeholder="{% trans "Quick search" %}"
+                 oninput="filterTree(this.value)">
+          <span class="input-group-text py-1">
+            <a href="#" onclick="document.getElementById('tree-quicksearch').value=''; filterTree('');" class="text-secondary">
+              <i class="mdi mdi-close-circle"></i>
+            </a>
+          </span>
+        </div>
+      </div>
+      {% if filter_form %}
+        <div class="col-auto">
+          <div class="input-group">
+            <div class="input-group-text">
+              <i class="mdi mdi-filter" title="{% trans "Saved filter" %}"></i>
+            </div>
+            {{ filter_form.filter_id }}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    {# Two-pane layout #}
+    <div class="row g-0" style="min-height: 60vh;">
+
+      {# Left pane: prefix tree #}
+      <div class="col-md-4 border-end pe-2" id="prefix-tree-pane">
+        <div class="mb-2">
+          <small class="text-muted">{% trans "Prefix Tree" %}</small>
+        </div>
+        <div id="prefix-tree">
+          {% if root_rows %}
+            {% include 'netbox_folderview/inc/prefix/tree_node.html' with children=root_rows depth=0 filter_params=filter_params %}
+          {% else %}
+            <p class="text-muted mt-3">{% trans "No prefixes found." %}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Right pane: IP addresses #}
+      <div class="col-md-8 ps-3" id="ip-list-pane">
+        <div id="ip-table-container">
+          <p class="text-muted mt-3">
+            <i class="mdi mdi-information-outline me-1"></i>
+            {% trans "Select a prefix to view its IP addresses." %}
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {# /Tree tab #}
+
+  {# Filters tab #}
+  {% if filter_form %}
+    <div class="tab-pane" id="filters-form" role="tabpanel" aria-labelledby="filters-form-tab">
+      {% include 'inc/filter_list.html' %}
+    </div>
+  {% endif %}
+  {# /Filters tab #}
+
+{% endblock content %}
+
+{% block modals %}{% endblock modals %}
+
+{% block javascript %}
+<script>
+  // Client-side quick search: hides tree nodes whose text doesn't match
+  function filterTree(query) {
+    const term = query.toLowerCase().trim();
+    document.querySelectorAll('#prefix-tree .tree-node').forEach(function(node) {
+      const text = node.textContent.toLowerCase();
+      node.closest('.tree-item-wrap').style.display = (!term || text.includes(term)) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock javascript %}

@@ -1,0 +1,28 @@
+{% load django_tables2 %}
+{% load helpers %}
+{% load i18n %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="mb-0">
+    {% trans "IPs in" %} <code>{{ prefix.prefix }}</code>
+    <span class="badge text-bg-secondary ms-1">{{ table.page.paginator.count }}</span>
+  </h6>
+  {% if request.user.is_authenticated %}
+    <button type="button" class="btn btn-sm" data-bs-toggle="modal"
+            data-bs-target="#PrefixIPTable_config"
+            title="{% trans "Configure Table" %}">
+      <i class="mdi mdi-cog"></i> {% trans "Configure" %}
+    </button>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="htmx-container table-responsive" id="ip_table">
+    {% include 'inc/paginator.html' with htmx=True table=table paginator=table.paginator page=table.page placement='top' %}
+    {% render_table table 'inc/table_htmx.html' %}
+    {% include 'inc/paginator.html' with htmx=True table=table paginator=table.paginator page=table.page %}
+  </div>
+</div>
+
+{# IP table column config modal #}
+{% table_config_form table table_name="PrefixIPTable" %}
