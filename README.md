@@ -7,8 +7,8 @@ A NetBox plugin that provides a folder-tree view of IP prefixes, similar to the 
 ## Compatible NetBox Versions
 
 | Plugin Version | NetBox Version |
-|---------------|----------------|
-| 0.1.x         | 4.5.x+         |
+| -------------- | -------------- |
+| 0.1.x          | 4.5.x+         |
 
 > **Note:** This plugin relies on internal NetBox APIs (`restrict()`, `UserConfig`, `PrefixFilterSet`, `SavedFilter`). Compatibility with versions below 4.5.0 is not guaranteed.
 
@@ -32,12 +32,14 @@ A NetBox plugin that provides a folder-tree view of IP prefixes, similar to the 
 
 Install into the same Python environment as NetBox.
 
-**From PyPI** *(once published)*:
+**From PyPI**:
+
 ```bash
 pip install netbox-folderview
 ```
 
 **From source** (development):
+
 ```bash
 git clone https://github.com/averyhabbott/netbox-folderview.git
 cd netbox-folderview
@@ -79,14 +81,16 @@ After installation, a **FolderView** section appears in the NetBox left-hand nav
 
 The main view is split into two panes:
 
-**Left pane — Prefix Tree**
+#### Left pane — Prefix Tree
+
 - Displays your prefix hierarchy as a collapsible folder tree
 - Top-level prefixes (those with no parent prefix) appear as root nodes; aggregates are excluded
 - Click the **chevron** (▶) beside a prefix to expand it and reveal child prefixes; a loading indicator appears while children are fetched. Click the chevron again to collapse.
 - **Single-click** a prefix to load its assigned IP addresses in the right pane; the selected prefix is highlighted
 - **Double-click** a prefix to navigate to its full NetBox detail page
 
-**Right pane — IP Addresses**
+#### Right pane — IP Addresses
+
 - Displays the IP addresses assigned within the selected prefix
 - Paginated using NetBox's standard pagination controls
 - **Double-click** any IP address to navigate to its NetBox detail page

@@ -7,7 +7,19 @@ name = "netbox-folderview"
 version = "0.1.0"
 description = "Folder-tree view of IP prefixes for NetBox"
 requires-python = ">=3.12"
-dependencies = ["netbox"]
+dependencies = []
+license = {text = "MIT"}
+classifiers = [
+    "Framework :: Django",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Networking",
+]
+
+[project.urls]
+Homepage = "https://github.com/averyhabbott/netbox-folderview"
+Repository = "https://github.com/averyhabbott/netbox-folderview"
 
 [[project.authors]]
 name = "Avery Abbott"
