@@ -82,8 +82,8 @@ The main view is split into two panes:
 **Left pane — Prefix Tree**
 - Displays your prefix hierarchy as a collapsible folder tree
 - Top-level prefixes (those with no parent prefix) appear as root nodes; aggregates are excluded
-- Click the **chevron** (▶) beside a prefix to expand it and reveal child prefixes
-- **Single-click** a prefix to load its assigned IP addresses in the right pane
+- Click the **chevron** (▶) beside a prefix to expand it and reveal child prefixes; a loading indicator appears while children are fetched. Click the chevron again to collapse.
+- **Single-click** a prefix to load its assigned IP addresses in the right pane; the selected prefix is highlighted
 - **Double-click** a prefix to navigate to its full NetBox detail page
 
 **Right pane — IP Addresses**

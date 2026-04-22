@@ -10,10 +10,14 @@
         {% if row.has_children %}
           <a href="#"
              class="text-muted tree-expand-btn"
+             data-expanded="0"
              hx-get="{% url 'plugins:netbox_folderview:prefix_children' pk=row.prefix.pk %}?{{ filter_params }}&depth={{ depth }}"
-             hx-target="next .tree-children"
+             hx-target="#tc-{{ row.prefix.pk }}"
              hx-swap="innerHTML"
-             hx-on::after-request="this.querySelector('i').classList.toggle('mdi-chevron-right'); this.querySelector('i').classList.toggle('mdi-chevron-down');"
+             hx-trigger="click"
+             hx-on::before-request="if(this.dataset.expanded==='1'){ event.preventDefault(); document.getElementById('tc-{{ row.prefix.pk }}').innerHTML=''; this.dataset.expanded='0'; this.querySelector('i').classList.replace('mdi-chevron-down','mdi-chevron-right'); } else { document.getElementById('tc-{{ row.prefix.pk }}').innerHTML='<div class=\'text-muted ps-2 py-1 small\'><span class=\'spinner-border spinner-border-sm me-1\' role=\'status\'></span>{% trans "Loading…" %}</div>'; }"
+             hx-on::after-request="this.dataset.expanded='1'; this.querySelector('i').classList.replace('mdi-chevron-right','mdi-chevron-down');"
+             onclick="event.preventDefault()"
              title="{% trans "Expand" %}">
             <i class="mdi mdi-chevron-right"></i>
           </a>
@@ -22,9 +26,10 @@
         {% endif %}
       </span>
 
-      {# Prefix label: single click loads IPs, double click navigates to detail #}
+      {# Prefix label: single click loads IPs + highlights row, double click navigates to detail #}
       <span class="tree-prefix flex-grow-1"
             style="cursor: pointer; user-select: none;"
+            data-selectable="true"
             hx-get="{% url 'plugins:netbox_folderview:prefix_ips' pk=row.prefix.pk %}"
             hx-target="#ip-table-container"
             hx-swap="innerHTML"
@@ -37,6 +42,6 @@
 
     </div>
     {# Children are injected here by htmx on expand #}
-    <div class="tree-children"></div>
+    <div class="tree-children" id="tc-{{ row.prefix.pk }}"></div>
   </div>
 {% endfor %}

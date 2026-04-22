@@ -104,7 +104,24 @@
 {% block modals %}{% endblock modals %}
 
 {% block javascript %}
+<style>
+  .fv-selected {
+    background-color: rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.15);
+    border-radius: 4px;
+  }
+</style>
 <script>
+  // Selected-prefix highlight — delegated on #prefix-tree so it works on
+  // nodes injected later by htmx expand calls.
+  document.getElementById('prefix-tree').addEventListener('click', function(e) {
+    const span = e.target.closest('[data-selectable]');
+    if (!span) return;
+    document.querySelectorAll('#prefix-tree .fv-selected').forEach(function(el) {
+      el.classList.remove('fv-selected');
+    });
+    span.classList.add('fv-selected');
+  });
+
   // Client-side quick search: hides tree nodes whose text doesn't match
   function filterTree(query) {
     const term = query.toLowerCase().trim();

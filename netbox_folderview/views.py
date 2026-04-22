@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import View
 
@@ -39,15 +40,24 @@ def _strip_depth(query_dict):
     return params
 
 
+def _vrf_safe(qs):
+    """
+    Annotate a queryset with _vrf_key = COALESCE(vrf_id, -1) so that NULL VRFs
+    compare equal to each other. -1 is never a valid VRF pk.
+    """
+    return qs.annotate(_vrf_key=Coalesce('vrf_id', Value(-1)))
+
+
 def _annotate_has_children(queryset, filtered_qs):
     """
     Annotate each prefix in queryset with has_children_in_set — True if any
     prefix in filtered_qs is numerically contained by it (within the same VRF).
     Avoids N+1 by pushing the existence check into a single SQL subquery.
+    Uses COALESCE for NULL-safe VRF comparison (NULL = NULL is FALSE in SQL).
     """
-    child_exists = filtered_qs.filter(
+    child_exists = _vrf_safe(filtered_qs).filter(
         prefix__net_contained=OuterRef('prefix'),
-        vrf=OuterRef('vrf'),
+        _vrf_key=Coalesce(OuterRef('vrf_id'), Value(-1)),
     )
     return queryset.annotate(has_children_in_set=Exists(child_exists))
 
@@ -64,9 +74,10 @@ class PrefixTreeView(BaseTreeView):
 
     def get_root_nodes(self, filtered_qs):
         # Root = no ancestor exists in the filtered set (VRF-scoped to avoid cross-VRF matches).
-        ancestor_exists = filtered_qs.filter(
+        # Uses COALESCE for NULL-safe VRF comparison (NULL = NULL is FALSE in SQL).
+        ancestor_exists = _vrf_safe(filtered_qs).filter(
             prefix__net_contains=OuterRef('prefix'),
-            vrf=OuterRef('vrf'),
+            _vrf_key=Coalesce(OuterRef('vrf_id'), Value(-1)),
         ).values('pk')[:1]
         roots = filtered_qs.annotate(
             has_ancestor_in_set=Exists(ancestor_exists)
@@ -111,7 +122,7 @@ class PrefixChildrenView(LoginRequiredMixin, View):
             depth = 1
 
         base_qs = Prefix.objects.restrict(request.user, 'view').prefetch_related('vrf', 'role', 'tenant')
-        filtered_qs = FolderViewPrefixFilterSet(request.GET, base_qs, request=request).qs
+        filtered_qs = FolderViewPrefixFilterSet(_strip_depth(request.GET), base_qs, request=request).qs
 
         # Mirror get_child_prefixes(): global containers (vrf=None + status=container)
         # span all VRFs; all other prefixes are scoped to their own VRF.
