@@ -5,7 +5,7 @@ class FolderViewConfig(PluginConfig):
     name = 'netbox_folderview'
     verbose_name = 'FolderView'
     description = 'Folder-tree view of IP prefixes'
-    version = '0.1.2'
+    version = '0.1.3'
     author = 'Avery Abbott'
     base_url = 'folderview'
     min_version = '4.5.0'
