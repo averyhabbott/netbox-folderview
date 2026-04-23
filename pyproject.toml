@@ -23,6 +23,8 @@ Repository = "https://github.com/averyhabbott/netbox-folderview"
 
 [[project.authors]]
 name = "Avery Abbott"
+
+[[project.authors]]
 email = "averyhabbott@yahoo.com"
 
 [tool.setuptools.packages.find]

@@ -61,10 +61,10 @@
     </div>
 
     {# Two-pane layout #}
-    <div class="row g-0">
+    <div id="split-container" style="display: flex; height: 75vh;">
 
       {# Left pane: prefix tree #}
-      <div class="col-md-4 border-end pe-2" id="prefix-tree-pane" style="max-height: 75vh; overflow-y: auto;">
+      <div id="prefix-tree-pane" style="width: 33%; overflow-y: auto; padding-right: 0.5rem; flex-shrink: 0;">
         <div class="mb-2 d-flex justify-content-between align-items-center">
           <small class="text-muted">{% trans "Prefix Tree" %}</small>
           {% if request.user.is_authenticated %}
@@ -84,8 +84,10 @@
         </div>
       </div>
 
+      <div id="split-divider"></div>
+
       {# Right pane: IP addresses #}
-      <div class="col-md-8 ps-3" id="ip-list-pane" style="max-height: 75vh; overflow-y: auto;">
+      <div id="ip-list-pane" style="flex: 1; overflow-y: auto; padding-left: 1rem; min-width: 0;">
         <div id="ip-table-container">
           <p class="text-muted mt-3">
             <i class="mdi mdi-information-outline me-1"></i>
@@ -115,6 +117,17 @@
 
 {% block javascript %}
 <style>
+  #split-divider {
+    width: 5px;
+    cursor: col-resize;
+    background: var(--tblr-border-color, rgba(98,105,118,.3));
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  #split-divider:hover,
+  #split-divider.fv-dragging {
+    background: var(--tblr-primary, #206bc4);
+  }
   .tree-node {
     background-color: var(--tblr-card-bg);
     border-bottom: 1px solid var(--tblr-border-color-translucent, rgba(98,105,118,.16));
@@ -135,6 +148,32 @@
     });
     span.classList.add('fv-selected');
   });
+
+  // Draggable split divider
+  (function () {
+    var container = document.getElementById('split-container');
+    var left      = document.getElementById('prefix-tree-pane');
+    var divider   = document.getElementById('split-divider');
+    var STORE_KEY = 'fv-split-pct';
+    var MIN = 15, MAX = 75;
+    function applyPct(pct) { left.style.width = pct + '%'; }
+    var saved = parseFloat(localStorage.getItem(STORE_KEY));
+    applyPct((saved >= MIN && saved <= MAX) ? saved : 33);
+    var dragging = false;
+    divider.addEventListener('mousedown', function (e) {
+      dragging = true; divider.classList.add('fv-dragging'); e.preventDefault();
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      var rect = container.getBoundingClientRect();
+      applyPct(Math.max(MIN, Math.min(MAX, ((e.clientX - rect.left) / rect.width) * 100)));
+    });
+    document.addEventListener('mouseup', function () {
+      if (!dragging) return;
+      dragging = false; divider.classList.remove('fv-dragging');
+      localStorage.setItem(STORE_KEY, parseFloat(left.style.width));
+    });
+  })();
 
   // Client-side quick search: hides tree nodes whose text doesn't match
   function filterTree(query) {
