@@ -1,0 +1,64 @@
+{% extends 'generic/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% blocktrans with name=source_folder.name %}Move Objects from "{{ name }}"{% endblocktrans %}{% endblock %}
+
+{% block page-header %}
+  <div class="container-fluid">
+    <ol class="breadcrumb mt-2">
+      <li class="breadcrumb-item"><a href="{% url 'plugins:netbox_folderview:catalog_list' %}">{% trans "Catalogs" %}</a></li>
+      <li class="breadcrumb-item"><a href="{{ source_folder.catalog.get_absolute_url }}">{{ source_folder.catalog.name }}</a></li>
+      <li class="breadcrumb-item active">{% trans "Move Objects" %}</li>
+    </ol>
+  </div>
+  {{ block.super }}
+{% endblock page-header %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <strong>
+          {% blocktrans with count=selected_pks|length name=source_folder.name %}
+            Move {{ count }} object(s) from "{{ name }}"
+          {% endblocktrans %}
+        </strong>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'plugins:netbox_folderview:folder_move_objects' pk=source_folder.pk %}">
+          {% csrf_token %}
+          {% for obj_pk in selected_pks %}
+            <input type="hidden" name="pk" value="{{ obj_pk }}">
+          {% endfor %}
+
+          <div class="mb-3">
+            <label for="destination_folder" class="form-label">{% trans "Destination Folder" %}</label>
+            <select name="destination_folder" id="destination_folder" class="form-select" required>
+              <option value="">---------</option>
+              {% for folder in available_folders %}
+                <option value="{{ folder.pk }}">{{ folder.name }}</option>
+              {% endfor %}
+            </select>
+            {% if not available_folders %}
+              <div class="form-text text-warning">
+                <i class="mdi mdi-alert-outline me-1"></i>
+                {% trans "No other static folders available in this catalog." %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="btn-list">
+            <button type="submit" class="btn btn-primary" {% if not available_folders %}disabled{% endif %}>
+              <i class="mdi mdi-folder-move-outline me-1"></i>{% trans "Move" %}
+            </button>
+            <a href="{{ source_folder.catalog.get_absolute_url }}" class="btn btn-default">
+              {% trans "Cancel" %}
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

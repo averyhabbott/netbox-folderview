@@ -1,0 +1,275 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load i18n %}
+
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{% url 'plugins:netbox_folderview:catalog_list' %}">{% trans "Catalogs" %}</a></li>
+  <li class="breadcrumb-item">{{ object.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <h5 class="mb-0 me-3">
+          <i class="mdi mdi-folder-multiple-outline me-1"></i>
+          {{ object.name }}
+        </h5>
+        <span class="badge text-bg-secondary me-2">{{ object.object_type_display }}</span>
+        {% if not object.allow_duplicates %}
+          <span class="badge text-bg-warning me-2">{% trans "No Duplicates" %}</span>
+        {% endif %}
+        {% if object.description %}
+          <span class="text-muted small">{{ object.description }}</span>
+        {% endif %}
+        <div class="ms-auto">
+          <a href="{% url 'plugins:netbox_folderview:folder_add' %}?catalog={{ object.pk }}"
+             class="btn btn-sm btn-primary">
+            <i class="mdi mdi-plus-thick me-1"></i>{% trans "Add Folder" %}
+          </a>
+          <a href="{% url 'plugins:netbox_folderview:catalog_edit' pk=object.pk %}"
+             class="btn btn-sm btn-warning ms-1">
+            <i class="mdi mdi-pencil me-1"></i>{% trans "Edit" %}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Two-pane layout #}
+<div id="split-container" style="display: flex; height: 75vh;">
+
+  {# Left pane: folder tree #}
+  <div id="catalog-folder-pane" style="width: 28%; overflow-y: auto; padding-right: 0.5rem; flex-shrink: 0;">
+    <div class="mb-2 d-flex justify-content-between align-items-center">
+      <small class="text-muted text-uppercase fw-semibold">{% trans "Folders" %}</small>
+    </div>
+
+    <div id="catalog-folder-tree">
+      {% if folder_rows %}
+        {% for row in folder_rows %}
+          <div class="folder-item"
+               data-pk="{{ row.folder.pk }}"
+               data-parent-pk="{{ row.folder.parent_id|default:'' }}"
+               data-depth="{{ row.depth }}"
+               {% if row.depth > 0 %}style="display:none;"{% endif %}>
+            <div class="folder-node d-flex align-items-center py-1"
+                 style="padding-left: {{ row.depth }}rem;">
+
+              {# Expand toggle — only if this folder has children #}
+              <span class="folder-toggle me-1" style="width: 1.2rem; text-align: center; flex-shrink: 0;"
+                    data-has-children="{{ row.folder.pk|stringformat:'d' }}">
+                <i class="mdi mdi-chevron-right text-muted fv-chevron" style="cursor:pointer; display:none;"></i>
+                <i class="mdi mdi-circle-small text-muted fv-leaf"></i>
+              </span>
+
+              {# Folder type icon #}
+              {% if row.folder.folder_type == 'dynamic' %}
+                <i class="mdi mdi-lightning-bolt text-info me-1" title="{% trans "Dynamic" %}"></i>
+              {% else %}
+                <i class="mdi mdi-folder-outline text-secondary me-1" title="{% trans "Static" %}"></i>
+              {% endif %}
+
+              {# Folder name — click loads objects in right pane #}
+              <span class="folder-label flex-grow-1"
+                    style="cursor: pointer; user-select: none;"
+                    data-selectable="true"
+                    hx-get="{% url 'plugins:netbox_folderview:folder_objects' pk=row.folder.pk %}"
+                    hx-target="#catalog-object-container"
+                    hx-swap="innerHTML">
+                {{ row.folder.name }}
+                {% if row.folder.show_nested_objects %}
+                  <i class="mdi mdi-arrow-expand-down text-muted ms-1" title="{% trans "Shows nested objects" %}"></i>
+                {% endif %}
+              </span>
+
+              {# Per-folder actions #}
+              <span class="ms-1 folder-actions" style="flex-shrink: 0;">
+                <a href="{% url 'plugins:netbox_folderview:folder_add' %}?catalog={{ object.pk }}&parent={{ row.folder.pk }}"
+                   class="text-muted" title="{% trans "Add subfolder" %}">
+                  <i class="mdi mdi-plus"></i>
+                </a>
+                <a href="{% url 'plugins:netbox_folderview:folder_edit' pk=row.folder.pk %}"
+                   class="text-muted ms-1" title="{% trans "Edit folder" %}">
+                  <i class="mdi mdi-pencil"></i>
+                </a>
+                <a href="{% url 'plugins:netbox_folderview:folder_delete' pk=row.folder.pk %}?return_url={{ object.get_absolute_url }}"
+                   class="text-muted ms-1" title="{% trans "Delete folder" %}">
+                  <i class="mdi mdi-trash-can-outline"></i>
+                </a>
+              </span>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted mt-3 small">
+          <i class="mdi mdi-information-outline me-1"></i>
+          {% trans "No folders yet." %}
+          <a href="{% url 'plugins:netbox_folderview:folder_add' %}?catalog={{ object.pk }}">{% trans "Add one." %}</a>
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="split-divider"></div>
+
+  {# Right pane: object list #}
+  <div id="catalog-object-pane" style="flex: 1; overflow-y: auto; padding-left: 1rem; min-width: 0;">
+    <div id="catalog-object-container">
+      <p class="text-muted mt-3">
+        <i class="mdi mdi-information-outline me-1"></i>
+        {% trans "Select a folder to view its objects." %}
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock content %}
+
+{% block javascript %}
+<style>
+  #split-divider {
+    width: 5px;
+    cursor: col-resize;
+    background: var(--tblr-border-color, rgba(98,105,118,.3));
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  #split-divider:hover,
+  #split-divider.fv-dragging {
+    background: var(--tblr-primary, #206bc4);
+  }
+  .folder-node {
+    background-color: var(--tblr-card-bg);
+    border-bottom: 1px solid var(--tblr-border-color-translucent, rgba(98,105,118,.16));
+    border-radius: 3px;
+  }
+  .folder-node:hover {
+    background-color: rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.05);
+  }
+  .folder-actions { opacity: 0; transition: opacity 0.1s; }
+  .folder-node:hover .folder-actions { opacity: 1; }
+  .fv-selected .folder-node {
+    background-color: rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.12);
+    border-radius: 4px;
+  }
+</style>
+<script>
+(function () {
+  // ── Draggable split divider ────────────────────────────────────────────────
+  var container = document.getElementById('split-container');
+  var left      = document.getElementById('catalog-folder-pane');
+  var divider   = document.getElementById('split-divider');
+  var STORE_KEY = 'fv-catalog-split-pct';
+  var MIN = 15, MAX = 60;
+  function applyPct(pct) { left.style.width = pct + '%'; }
+  var saved = parseFloat(localStorage.getItem(STORE_KEY));
+  applyPct((saved >= MIN && saved <= MAX) ? saved : 28);
+  var dragging = false;
+  divider.addEventListener('mousedown', function (e) {
+    dragging = true; divider.classList.add('fv-dragging'); e.preventDefault();
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (!dragging) return;
+    var rect = container.getBoundingClientRect();
+    applyPct(Math.max(MIN, Math.min(MAX, ((e.clientX - rect.left) / rect.width) * 100)));
+  });
+  document.addEventListener('mouseup', function () {
+    if (!dragging) return;
+    dragging = false; divider.classList.remove('fv-dragging');
+    localStorage.setItem(STORE_KEY, parseFloat(left.style.width));
+  });
+
+  // ── Expand/collapse folder tree ────────────────────────────────────────────
+  var tree = document.getElementById('catalog-folder-tree');
+
+  // Determine which folders have children (any item whose data-parent-pk is non-empty)
+  var parentPks = new Set();
+  tree.querySelectorAll('.folder-item[data-parent-pk]').forEach(function (el) {
+    var pid = el.getAttribute('data-parent-pk');
+    if (pid) parentPks.add(pid);
+  });
+
+  // Show chevron on folders that have children; hide leaf bullet
+  tree.querySelectorAll('.folder-item').forEach(function (el) {
+    var pk = el.getAttribute('data-pk');
+    var chevron = el.querySelector('.fv-chevron');
+    var leaf    = el.querySelector('.fv-leaf');
+    if (parentPks.has(pk)) {
+      chevron.style.display = '';
+      leaf.style.display    = 'none';
+    }
+  });
+
+  // Track expanded state
+  var expanded = {};
+
+  function toggleFolder(pk) {
+    var children = tree.querySelectorAll('.folder-item[data-parent-pk="' + pk + '"]');
+    var isExpanded = expanded[pk];
+    expanded[pk] = !isExpanded;
+
+    children.forEach(function (child) {
+      if (isExpanded) {
+        // Collapse — hide this child and all its descendants
+        collapseSubtree(child.getAttribute('data-pk'));
+        child.style.display = 'none';
+      } else {
+        child.style.display = '';
+      }
+    });
+
+    // Update chevron direction
+    var item = tree.querySelector('.folder-item[data-pk="' + pk + '"]');
+    if (item) {
+      var chevron = item.querySelector('.fv-chevron');
+      if (chevron) {
+        chevron.classList.toggle('mdi-chevron-right', isExpanded);
+        chevron.classList.toggle('mdi-chevron-down', !isExpanded);
+      }
+    }
+  }
+
+  function collapseSubtree(pk) {
+    expanded[pk] = false;
+    var children = tree.querySelectorAll('.folder-item[data-parent-pk="' + pk + '"]');
+    children.forEach(function (child) {
+      child.style.display = 'none';
+      collapseSubtree(child.getAttribute('data-pk'));
+    });
+    var item = tree.querySelector('.folder-item[data-pk="' + pk + '"]');
+    if (item) {
+      var chevron = item.querySelector('.fv-chevron');
+      if (chevron) {
+        chevron.classList.add('mdi-chevron-right');
+        chevron.classList.remove('mdi-chevron-down');
+      }
+    }
+  }
+
+  tree.addEventListener('click', function (e) {
+    // Expand/collapse on chevron click
+    var chevron = e.target.closest('.fv-chevron');
+    if (chevron) {
+      e.preventDefault();
+      var item = chevron.closest('.folder-item');
+      if (item) toggleFolder(item.getAttribute('data-pk'));
+      return;
+    }
+
+    // Highlight on folder label click
+    var label = e.target.closest('[data-selectable]');
+    if (label) {
+      tree.querySelectorAll('.fv-selected').forEach(function (el) {
+        el.classList.remove('fv-selected');
+      });
+      label.closest('.folder-item').classList.add('fv-selected');
+    }
+  });
+})();
+</script>
+{% endblock javascript %}

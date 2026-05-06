@@ -1,0 +1,68 @@
+{% load i18n %}
+{% load render_table from django_tables2 %}
+
+{% if error %}
+  <div class="alert alert-danger">
+    <i class="mdi mdi-alert-circle me-1"></i>{{ error }}
+  </div>
+{% elif table %}
+  <div class="mb-2 d-flex align-items-center justify-content-between">
+    <small class="text-muted text-uppercase fw-semibold">
+      {% if folder.folder_type == 'dynamic' %}
+        <i class="mdi mdi-lightning-bolt text-info me-1"></i>
+      {% else %}
+        <i class="mdi mdi-folder-outline text-secondary me-1"></i>
+      {% endif %}
+      {{ folder.name }}
+      {% if folder.show_nested_objects %}
+        <span class="badge text-bg-secondary ms-1">{% trans "Nested" %}</span>
+      {% endif %}
+    </small>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge text-bg-secondary">{{ table.page.paginator.count|default:table.rows|length }} {% trans "objects" %}</span>
+      {% if folder.folder_type == 'static' %}
+        <a href="{% url 'plugins:netbox_folderview:folder_add_objects' pk=folder.pk %}"
+           class="btn btn-xs btn-primary">
+          <i class="mdi mdi-plus-thick me-1"></i>{% trans "Add Objects" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if table.rows %}
+    {% if folder.folder_type == 'static' %}
+      <form method="post" id="folder-objects-form">
+        {% csrf_token %}
+        {% render_table table %}
+        <div class="btn-list mt-2 d-print-none">
+          <button type="submit"
+                  formaction="{% url 'plugins:netbox_folderview:folder_remove_objects' pk=folder.pk %}"
+                  class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Remove selected objects from this folder?')">
+            <i class="mdi mdi-trash-can-outline me-1"></i>{% trans "Remove Selected" %}
+          </button>
+          <button type="submit"
+                  formaction="{% url 'plugins:netbox_folderview:folder_move_objects' pk=folder.pk %}"
+                  class="btn btn-sm btn-outline-secondary">
+            <i class="mdi mdi-folder-move-outline me-1"></i>{% trans "Move Selected" %}
+          </button>
+        </div>
+      </form>
+    {% else %}
+      {% render_table table %}
+    {% endif %}
+  {% else %}
+    <p class="text-muted mt-3">
+      <i class="mdi mdi-information-outline me-1"></i>
+      {% trans "No objects in this folder." %}
+      {% if folder.folder_type == 'static' %}
+        <a href="{% url 'plugins:netbox_folderview:folder_add_objects' pk=folder.pk %}">{% trans "Add objects." %}</a>
+      {% endif %}
+    </p>
+  {% endif %}
+{% else %}
+  <p class="text-muted mt-3">
+    <i class="mdi mdi-information-outline me-1"></i>
+    {% trans "Select a folder to view its objects." %}
+  </p>
+{% endif %}

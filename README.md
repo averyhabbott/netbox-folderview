@@ -1,6 +1,9 @@
 # NetBox FolderView
 
-A NetBox plugin that provides a folder-tree view of IP prefixes, similar to the experience offered by SolarWinds IPAM or phpIPAM. Browse your prefix hierarchy visually, drill into assigned IP addresses, and filter the tree using NetBox's native filter and saved-filter system — all without leaving the familiar NetBox UI.
+A NetBox plugin with two independent features:
+
+- **Prefix Tree** — a collapsible folder-tree view of IP prefixes, similar to SolarWinds IPAM or phpIPAM
+- **Catalogs** — user-defined hierarchical folder structures for organizing any NetBox object type
 
 ---
 
@@ -9,28 +12,39 @@ A NetBox plugin that provides a folder-tree view of IP prefixes, similar to the 
 | Plugin Version | NetBox Version |
 | -------------- | -------------- |
 | 0.1.x          | 4.5.x+         |
+| 0.2.x          | 4.5.x+         |
 
-> **Note:** This plugin relies on internal NetBox APIs (`restrict()`, `UserConfig`, `PrefixFilterSet`, `SavedFilter`). Compatibility with versions below 4.5.0 is not guaranteed.
+> **Note:** This plugin relies on internal NetBox APIs. Compatibility with versions below 4.5.0 is not guaranteed.
 
 ---
 
 ## Features
 
+### Prefix Tree
+
 - **Two-pane tree view** — prefix hierarchy on the left, IP addresses on the right
-- **Lazy loading** — child prefixes and IP addresses are fetched on demand; no performance penalty on large datasets
-- **Filter-aware tree** — apply any NetBox prefix filter and the tree reorganizes to show only matching prefixes; filtered-out parent prefixes are skipped and their children become root nodes automatically
-- **Saved filters** — the saved filter dropdown from the standard Prefixes view is available directly in the tree header
-- **Column configuration** — columns in both the prefix tree and IP address table are configurable per-user, persisted via NetBox's native `UserConfig` mechanism
+- **Lazy loading** — child prefixes and IP addresses are fetched on demand
+- **Filter-aware tree** — apply any NetBox prefix filter and the tree reorganizes automatically
+- **Saved filters** — the saved filter dropdown from the standard Prefixes view is available in the tree header
+- **Column configuration** — configurable per-user, persisted via NetBox's native `UserConfig` mechanism
 - **Respects NetBox RBAC** — all queries are restricted to the authenticated user's object-level permissions
-- **Read-only** — no create, edit, or delete actions; purely a visualization layer over existing data
+
+### Catalogs
+
+- **Any object type** — create catalogs for Devices, Prefixes, VLANs, Circuits, VMs, and any other NetBox type that has a registered filterset
+- **Hierarchical folders** — nest folders inside folders to any depth
+- **Static folders** — manually curate which objects belong in each folder
+- **Dynamic folders** — reference a NetBox Saved Filter; membership is resolved at runtime, always current
+- **Duplicate control** — optionally prevent an object from appearing in more than one static folder within a catalog
+- **Two-pane catalog view** — folder tree on the left, filtered object table on the right with native NetBox columns, filters, and search
+- **Bulk operations** — add, remove, and move objects across folders in bulk
+- **Respects NetBox RBAC** — object queries are restricted to the user's existing NetBox permissions; Catalog and Folder access is governed by standard NetBox object-level permissions
 
 ---
 
 ## Installation
 
 ### 1. Install the package
-
-Install into the same Python environment as NetBox.
 
 **From PyPI**:
 
@@ -60,68 +74,118 @@ PLUGINS_CONFIG = {
 }
 ```
 
-### 3. Restart NetBox
-
-No database migrations are required — the plugin is stateless.
+### 3. Run migrations
 
 ```bash
-# Example for a systemd-managed installation
+python manage.py migrate
+```
+
+### 4. Restart NetBox
+
+```bash
 sudo systemctl restart netbox netbox-rq
 ```
 
 ---
 
+## Permissions
+
+FolderView uses NetBox's standard object-level permissions system. No special configuration is required for the Prefix Tree — it respects existing prefix permissions automatically.
+
+For **Catalogs**, two object types appear in NetBox's permission picker: **Catalog** and **Folder**. Users need view permission on both to see a catalog and its contents. Granting only one is not sufficient.
+
+### Recommended setup
+
+Create a single permission entry covering both object types:
+
+1. In NetBox, go to **Admin → Permissions → Add Permission**
+2. Set a name (e.g. "View all catalogs")
+3. Under **Object Types**, select both **netbox\_folderview | catalog** and **netbox\_folderview | folder**
+4. Set **Actions** to `view` (add `add`, `change`, `delete` as needed)
+5. Leave **Constraints** empty to grant access to all catalogs, or scope them (see below)
+6. Assign the permission to the appropriate users or groups
+
+### Scoping access to specific catalogs
+
+To give a user access to only certain catalogs, use constraints on **separate** permission entries:
+
+**Catalog permission** — constrains which catalogs the user can see:
+
+```json
+{"name": "My Devices Catalog"}
+```
+
+**Folder permission** — must be scoped to match:
+
+```json
+{"catalog__name": "My Devices Catalog"}
+```
+
+Without the matching Folder constraint, the user can see the catalog in the nav but none of its folders will load.
+
+### Object permissions in the right pane
+
+Objects displayed inside a folder are always filtered by the user's **existing NetBox permissions** for that object type. FolderView does not grant access to objects — it only organizes them. A user without `view` permission on Devices will see an empty folder even if devices are in it.
+
+---
+
 ## How to Use
 
-### Navigating to the Prefix Tree
+### Using the Prefix Tree
 
-After installation, a **FolderView** section appears in the NetBox left-hand navigation menu. Click **Prefix Tree** to open the view.
+Navigate to **FolderView → Prefix Tree** in the left-hand nav.
 
-### The Tree Tab
+- **Left pane** — collapsible prefix hierarchy. Click the chevron to expand/collapse. Single-click a prefix to load its IPs on the right. Double-click to navigate to the NetBox detail page.
+- **Right pane** — IP addresses within the selected prefix. Double-click any row to navigate to its detail page.
+- **Filtering** — use the quick search, saved filter dropdown, or the Filters tab for the full NetBox prefix filter panel.
+- **Column configuration** — click **Configure** in either pane to choose which columns are shown; preferences are saved per-user.
 
-The main view is split into two panes:
+### Using Catalogs
 
-#### Left pane — Prefix Tree
+Navigate to **FolderView → Manage Catalogs** to create and manage catalogs, or click directly on a catalog name in the nav to open it.
 
-- Displays your prefix hierarchy as a collapsible folder tree
-- Top-level prefixes (those with no parent prefix) appear as root nodes; aggregates are excluded
-- Click the **chevron** (▶) beside a prefix to expand it and reveal child prefixes; a loading indicator appears while children are fetched. Click the chevron again to collapse.
-- **Single-click** a prefix to load its assigned IP addresses in the right pane; the selected prefix is highlighted
-- **Double-click** a prefix to navigate to its full NetBox detail page
+#### Creating a catalog
 
-#### Right pane — IP Addresses
+1. Click **+ Add** on the Manage Catalogs page
+2. Choose a name and **Object Type** (the type of objects this catalog will organize)
+3. Set **Allow Duplicates** — when disabled, each object may only appear in one static folder within this catalog
+4. Set **Default: Show Nested Objects** — controls whether new folders in this catalog show objects from all descendant folders by default
 
-- Displays the IP addresses assigned within the selected prefix
-- Paginated using NetBox's standard pagination controls
-- **Double-click** any IP address to navigate to its NetBox detail page
-- Click **Configure** (available in both panes) to choose which columns are shown; your preferences are saved per-user
+#### Creating folders
 
-### Filtering the Tree
+Within a catalog, click **+ Add Folder** to create a folder:
 
-Use the controls at the top of the Tree tab to narrow what appears:
+- **Parent Folder** — leave blank for a root-level folder, or select a parent to nest it
+- **Folder Type** — *Static* (manual) or *Dynamic* (filter-driven)
+- **Show Nested Objects** — when enabled, the folder displays objects from all descendant folders recursively
+- **Saved Filter** — required for dynamic folders; only shared filters matching the catalog's object type are shown
 
-- **Quick search** — type to filter the visible tree by prefix or description
-- **Saved filter dropdown** — apply any saved filter you've created on the standard Prefixes page
-- **Filters tab** — switch to the Filters tab for the full NetBox prefix filter panel (VRF, tenant, site, role, status, and more); click **Search** to apply; the tree reorganizes to show only matching results
+> Dynamic folders cannot be parents of static folders.
 
-When filters are active, a summary of applied filters appears above the tree. Click the **Reset** button on the Filters tab to clear all filters.
+#### Adding objects (static folders)
+
+Click **Add Objects** in the right pane when a static folder is selected. This opens a full NetBox-native list view for the catalog's object type, with all standard filters and search. Select objects and click **Add to Folder**.
+
+#### Moving and removing objects
+
+Per-row and bulk actions are available in the right pane when a static folder is selected:
+
+- **Remove** / **Remove Selected** — deletes the folder membership; the object itself is unaffected
+- **Move** / **Move Selected** — moves objects to another static folder within the same catalog atomically
+
+#### Finding duplicate objects
+
+If a catalog has **Allow Duplicates** disabled, use the **Find Duplicate Objects** action (available in the action dropdown on the Manage Catalogs page) to see any objects that appear in more than one static folder.
 
 ---
 
 ## Development
 
-To run against a local NetBox instance:
-
 ```bash
-# Clone and install in editable mode
 git clone https://github.com/averyhabbott/netbox-folderview.git
-pip install -e ./netbox-folderview
-
-# Add to your NetBox configuration.py (see Installation above)
-
-# Start the NetBox dev server (no migrations needed)
-cd netbox
-python manage.py runserver
+cd netbox-folderview
+pip install -e .
+# Add to configuration.py, run migrate, restart NetBox
 ```
 
 ---

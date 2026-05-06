@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-folderview"
-version = "0.1.3"
-description = "Folder-tree view of IP prefixes for NetBox — collapsible hierarchy, per-prefix IP browsing, filter-aware."
+version = "0.2.0"
+description = "NetBox plugin: folder-tree prefix browser and user-defined Catalogs for organizing any NetBox object type into hierarchical folders."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
 dependencies = []
@@ -20,6 +20,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/averyhabbott/netbox-folderview"
 Repository = "https://github.com/averyhabbott/netbox-folderview"
+Changelog = "https://github.com/averyhabbott/netbox-folderview/blob/main/CHANGELOG.md"
 
 [[project.authors]]
 name = "Avery Abbott"

@@ -4,7 +4,49 @@ from django.utils.translation import gettext_lazy as _
 from ipam.models import IPAddress, Prefix
 from netbox.tables import NetBoxTable, columns
 
-__all__ = ('PrefixIPTable', 'PrefixTreeTable')
+from .models import Catalog, Folder
+
+__all__ = ('CatalogTable', 'FolderTable', 'PrefixIPTable', 'PrefixTreeTable')
+
+CATALOG_EXTRA_BUTTONS = """
+{% load i18n %}
+<a href="{% url 'plugins:netbox_folderview:catalog_duplicates' pk=record.pk %}"
+   class="btn btn-sm btn-outline-secondary"
+   title="{% trans 'Find Duplicate Objects' %}">
+  <i class="mdi mdi-content-duplicate"></i>
+</a>
+"""
+
+
+class CatalogTable(NetBoxTable):
+    name = tables.Column(linkify=True, verbose_name=_('Name'))
+    object_type = tables.Column(verbose_name=_('Object Type'))
+    folder_count = tables.Column(verbose_name=_('Folders'), orderable=False)
+    allow_duplicates = columns.BooleanColumn(verbose_name=_('Allow Duplicates'))
+    actions = columns.ActionsColumn(extra_buttons=CATALOG_EXTRA_BUTTONS)
+
+    class Meta(NetBoxTable.Meta):
+        model = Catalog
+        fields = ('pk', 'id', 'name', 'object_type', 'description', 'folder_count', 'allow_duplicates', 'actions')
+        default_columns = ('pk', 'name', 'object_type', 'folder_count', 'allow_duplicates', 'actions')
+
+    def render_object_type(self, value):
+        model_class = value.model_class()
+        if model_class:
+            return model_class._meta.verbose_name_plural.title()
+        return str(value)
+
+
+class FolderTable(NetBoxTable):
+    name = tables.Column(verbose_name=_('Name'))
+    folder_type = tables.Column(verbose_name=_('Type'))
+    parent = tables.Column(verbose_name=_('Parent'))
+    show_nested_objects = columns.BooleanColumn(verbose_name=_('Show Nested'))
+
+    class Meta(NetBoxTable.Meta):
+        model = Folder
+        fields = ('pk', 'id', 'name', 'folder_type', 'parent', 'show_nested_objects', 'actions')
+        default_columns = ('pk', 'name', 'folder_type', 'parent', 'show_nested_objects', 'actions')
 
 
 class PrefixTreeTable(NetBoxTable):
