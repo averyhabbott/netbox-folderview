@@ -161,7 +161,12 @@ class FolderMembership(models.Model):
     )
 
     class Meta:
-        unique_together = [('folder', 'object_id')]
+        constraints = [
+            models.UniqueConstraint(
+                fields=('folder', 'object_id'),
+                name='netbox_folderview_foldermembership_unique',
+            ),
+        ]
         verbose_name = _('folder membership')
         verbose_name_plural = _('folder memberships')
 

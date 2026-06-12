@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] — 2026-06-12
+
+### Added
+
+- **REST API** for Catalog and Folder (`/api/plugins/folderview/catalogs/`, `/api/plugins/folderview/folders/`): list / retrieve / create / update / delete with token authentication, pagination, and filtering (`name`, `object_type`, `catalog`, `folder_type`).
+- **Comprehensive test suite** — models, views, REST API, filtersets, dynamic object-type resolution, and plugin config. Validated on NetBox 4.6.2.
+
+### Fixed
+
+- Deleting a Catalog or Folder raised HTTP 500 (`SerializerNotFound`) on NetBox 4.6. NetBox 4.6's event pipeline serializes change-logged objects through their REST API serializer; the new serializers satisfy that path.
+
+### Changed
+
+- Validated against NetBox 4.6.x; `max_version` is `4.6.999`.
+- License changed from MIT to **GPL-3.0-or-later** (full text now shipped in `LICENSE`).
+
+---
+
+## [0.2.1] — 2026-05-19
+
+### Fixed
+
+- Resolved "Your models in app(s): 'netbox_folderview' have changes that are not yet reflected in a migration" warning emitted by `manage.py migrate` after installing 0.2.0. Adds `0002_field_metadata` migration to align field `verbose_name` / `help_text` and switches `FolderMembership` to a `UniqueConstraint` (matches the shipped initial migration). No schema changes.
+
+---
+
 ## [0.2.0] — 2026-05-06
 
 ### Added

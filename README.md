@@ -11,8 +11,11 @@ A NetBox plugin with two independent features:
 
 | Plugin Version | NetBox Version |
 | -------------- | -------------- |
-| 0.1.x          | 4.5.x+         |
-| 0.2.x          | 4.5.x+         |
+| 0.1.x          | 4.5.x          |
+| 0.2.x          | 4.5.x          |
+| 0.3.x          | 4.5.x – 4.6.x  |
+
+**Python:** 3.10 – 3.13 (matching the supported NetBox releases).
 
 > **Note:** This plugin relies on internal NetBox APIs. Compatibility with versions below 4.5.0 is not guaranteed.
 
@@ -179,6 +182,27 @@ If a catalog has **Allow Duplicates** disabled, use the **Find Duplicate Objects
 
 ---
 
+## REST API
+
+FolderView exposes Catalog and Folder through NetBox's standard REST API, under
+the plugin's API namespace:
+
+- `GET|POST /api/plugins/folderview/catalogs/` — list / create
+- `GET|PATCH|PUT|DELETE /api/plugins/folderview/catalogs/{id}/` — retrieve / update / delete
+- `GET|POST /api/plugins/folderview/folders/` — list / create
+- `GET|PATCH|PUT|DELETE /api/plugins/folderview/folders/{id}/` — retrieve / update / delete
+
+These follow the usual NetBox conventions: Bearer-token authentication, paginated
+list responses, and filtering. Catalogs can be filtered by `name` and
+`object_type`; folders by `name`, `catalog`, and `folder_type`.
+
+```bash
+curl -s -H "Authorization: Token $NETBOX_TOKEN" \
+  "https://netbox.example.com/api/plugins/folderview/catalogs/?object_type=ipam.prefix"
+```
+
+---
+
 ## Development
 
 ```bash
@@ -188,8 +212,22 @@ pip install -e .
 # Add to configuration.py, run migrate, restart NetBox
 ```
 
+### Running the tests
+
+```bash
+python manage.py test netbox_folderview
+```
+
+The suite must run under a configuration that lists `netbox_folderview` in
+`PLUGINS` — i.e. your normal `configuration.py`, **not**
+`netbox.configuration_testing` (which resets `PLUGINS` to only the bundled dummy
+plugin, so none of these tests would load). Django's test runner creates and
+tears down its own throwaway `test_*` database, so it is safe to run against a
+live development install.
+
 ---
 
 ## License
 
-MIT
+This project is licensed under the **GNU General Public License v3.0 or later
+(GPLv3)**. See [LICENSE](LICENSE) for the full text.
